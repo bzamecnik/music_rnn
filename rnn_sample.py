@@ -2,7 +2,7 @@ import os, sys
 import argparse
 import time
 import itertools
-import cPickle
+import pickle
 
 import numpy as np
 import tensorflow as tf    
@@ -27,14 +27,14 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with open(args.config_file, 'r') as f: 
-        config = cPickle.load(f)
+        config = pickle.load(f)
 
     if config.dataset == 'softmax':
         config.time_batch_len = 1
         config.max_time_batches = -1
         model_class = NottinghamModel
         with open(nottingham_util.PICKLE_LOC, 'r') as f:
-            pickle = cPickle.load(f)
+            pickle = pickle.load(f)
         chord_to_idx = pickle['chord_to_idx']
 
         time_step = 120
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     else:
         raise Exception("Other datasets not yet implemented")
 
-    print config
+    print(config)
 
     with tf.Graph().as_default(), tf.Session() as session:
         with tf.variable_scope("model", reuse=None):
@@ -62,7 +62,7 @@ if __name__ == '__main__':
             # 16 - one measure, 64 - chord progression
             repeats = args.sample_length / 64
             sample_seq = nottingham_util.i_vi_iv_v(chord_to_idx, repeats, config.input_dim)
-            print 'Sampling melody using a I, VI, IV, V progression'
+            print('Sampling melody using a I, VI, IV, V progression')
 
         elif args.sample_seq == 'random':
             sample_index = np.random.choice(np.arange(len(pickle['test'])))

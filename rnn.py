@@ -2,7 +2,7 @@ import os, sys
 import argparse
 import time
 import itertools
-import cPickle
+import pickle
 import logging
 import random
 import string
@@ -63,11 +63,11 @@ if __name__ == '__main__':
         time_step = 120
         model_class = NottinghamModel
         with open(nottingham_util.PICKLE_LOC, 'r') as f:
-            pickle = cPickle.load(f)
+            pickle = pickle.load(f)
             chord_to_idx = pickle['chord_to_idx']
 
         input_dim = pickle["train"][0].shape[1]
-        print 'Finished loading data, input dim: {}'.format(input_dim)
+        print('Finished loading data, input dim: {}'.format(input_dim))
     else:
         raise Exception("Other datasets not yet implemented")
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     }
 
     # Generate product of hyperparams
-    runs = list(list(itertools.izip(grid, x)) for x in itertools.product(*grid.itervalues()))
+    runs = list(list(zip(grid, x)) for x in itertools.product(*iter(grid.values())))
     logger.info("{} runs detected".format(len(runs)))
 
     for combination in runs:
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         logger.info(config)
         config_file_path = os.path.join(run_folder, get_config_name(config) + '.config')
         with open(config_file_path, 'w') as f: 
-            cPickle.dump(config, f)
+            pickle.dump(config, f)
 
         with tf.Graph().as_default(), tf.Session() as session:
             with tf.variable_scope("model", reuse=None):

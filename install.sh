@@ -1,4 +1,4 @@
-conda create -n music_rnn python=2.7
+conda create -n music_rnn python=3.5
 source activate music_rnn
 
 pip install -r requirements.txt
