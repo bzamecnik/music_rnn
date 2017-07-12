@@ -69,13 +69,13 @@ class Model(object):
 
         batch_size = tf.shape(self.seq_input_dropout)[0]
         self.initial_state = self.cell.zero_state(batch_size, tf.float32)
-        inputs_list = tf.unpack(self.seq_input_dropout)
+        inputs_list = tf.unstack(self.seq_input_dropout)
 
         # rnn outputs a list of [batch_size x H] outputs
         outputs_list, self.final_state = rnn.rnn(self.cell, inputs_list, 
                                                  initial_state=self.initial_state)
 
-        outputs = tf.pack(outputs_list)
+        outputs = tf.stack(outputs_list)
         outputs_concat = tf.reshape(outputs, [-1, hidden_size])
         logits_concat = tf.matmul(outputs_concat, output_W) + output_b
         logits = tf.reshape(logits_concat, [self.time_batch_len, -1, input_dim])
@@ -91,7 +91,7 @@ class Model(object):
             tf.placeholder(tf.float32, [self.time_batch_len, None, self.input_dim])
 
         batch_size = tf.shape(self.seq_input_dropout)
-        cross_ent = tf.nn.sigmoid_cross_entropy_with_logits(outputs, self.seq_targets)
+        cross_ent = tf.nn.sigmoid_cross_entropy_with_logits(logits=outputs, labels=self.seq_targets)
         return tf.reduce_sum(cross_ent) / self.time_batch_len / tf.to_float(batch_size)
 
     def calculate_probs(self, logits):
@@ -121,11 +121,11 @@ class NottinghamModel(Model):
         targets_concat = tf.reshape(self.seq_targets, [-1, 2])
 
         melody_loss = tf.nn.sparse_softmax_cross_entropy_with_logits( \
-            outputs_concat[:, :r], \
-            targets_concat[:, 0])
+            logits=outputs_concat[:, :r], \
+            labels=targets_concat[:, 0])
         harmony_loss = tf.nn.sparse_softmax_cross_entropy_with_logits( \
-            outputs_concat[:, r:], \
-            targets_concat[:, 1])
+            logits=outputs_concat[:, r:], \
+            labels=targets_concat[:, 1])
         losses = tf.add(self.melody_coeff * melody_loss, (1 - self.melody_coeff) * harmony_loss)
         return tf.reduce_sum(losses) / self.time_batch_len / tf.to_float(batch_size)
 
@@ -134,8 +134,8 @@ class NottinghamModel(Model):
         for t in range(self.time_batch_len):
             melody_softmax = tf.nn.softmax(logits[t, :, :nottingham_util.NOTTINGHAM_MELODY_RANGE])
             harmony_softmax = tf.nn.softmax(logits[t, :, nottingham_util.NOTTINGHAM_MELODY_RANGE:])
-            steps.append(tf.concat(1, [melody_softmax, harmony_softmax]))
-        return tf.pack(steps)
+            steps.append(tf.concat(axis=1, values=[melody_softmax, harmony_softmax]))
+        return tf.stack(steps)
 
     def assign_melody_coeff(self, session, melody_coeff):
         if melody_coeff < 0.0 or melody_coeff > 1.0:
@@ -161,7 +161,7 @@ class NottinghamSeparate(Model):
 
         targets_concat = tf.reshape(self.seq_targets, [-1])
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits( \
-            outputs_concat, targets_concat)
+            logits=outputs_concat, labels=targets_concat)
 
         return tf.reduce_sum(losses) / self.time_batch_len / tf.to_float(batch_size)
 
@@ -170,4 +170,4 @@ class NottinghamSeparate(Model):
         for t in range(self.time_batch_len):
             softmax = tf.nn.softmax(logits[t, :, :])
             steps.append(softmax)
-        return tf.pack(steps)
+        return tf.stack(steps)

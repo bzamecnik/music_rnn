@@ -128,8 +128,8 @@ if __name__ == '__main__':
             with tf.variable_scope("model", reuse=True):
                 valid_model = model_class(config, training=False)
 
-            saver = tf.train.Saver(tf.all_variables(), max_to_keep=40)
-            tf.initialize_all_variables().run()
+            saver = tf.train.Saver(tf.global_variables(), max_to_keep=40)
+            tf.global_variables_initializer().run()
 
             # training
             early_stop_best_loss = None
