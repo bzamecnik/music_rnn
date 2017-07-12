@@ -49,7 +49,7 @@ class Model(object):
             else:
                 raise Exception("Invalid cell type: {}".format(cell_type))
 
-            cell = cell_class(hidden_size)
+            cell = cell_class(hidden_size, state_is_tuple=False)
             if training:
                 return rnn.DropoutWrapper(cell, output_keep_prob = dropout_prob)
             else:
@@ -61,7 +61,8 @@ class Model(object):
             self.seq_input_dropout = self.seq_input
 
         self.cell = rnn.MultiRNNCell(
-            [create_cell(input_dim)] + [create_cell(hidden_size) for i in range(1, num_layers)])
+            [create_cell(input_dim)] + [create_cell(hidden_size) for i in range(1, num_layers)],
+            state_is_tuple=False)
 
         batch_size = tf.shape(self.seq_input_dropout)[0]
         self.initial_state = self.cell.zero_state(batch_size, tf.float32)
